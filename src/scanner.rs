@@ -10,8 +10,12 @@ pub enum ScanError {
         line_index: usize,
         col_index: usize,
     },
-    #[error("Unterminated string at line {} col {}", line, col)]
-    UnterminatedString { line: usize, col: usize },
+    #[error("Unterminated string at line {} col {}\n{} | {}\n", line_index + 1, col_index + 1, line_index + 1,line)]
+    UnterminatedString {
+        line: String,
+        line_index: usize,
+        col_index: usize,
+    },
 }
 
 pub struct Scanner {
@@ -24,7 +28,7 @@ impl Scanner {
         Self { tokens }
     }
 
-    pub fn scan_tokens(source: &String) -> Result<Vec<Token>, Vec<ScanError>> {
+    pub fn scan_tokens(source: &str) -> Result<Vec<Token>, Vec<ScanError>> {
         let mut scan_errors = Vec::new();
         let mut tokens = Vec::new();
         let mut lines = source.lines().enumerate();
@@ -91,18 +95,18 @@ impl Scanner {
                                 } else {
                                     string_literal = [string_literal, char.into()].concat();
                                 }
+                            } else if let Some((next_line, next_line_string)) = lines.next() {
+                                // This section makes multi-line strings possible
+                                line = next_line;
+                                line_string = next_line_string;
+                                graphemes = next_line_string.graphemes(true).enumerate().peekable();
                             } else {
-                                if let Some((next_line, next_line_string)) = lines.next() {
-                                    // This section makes multi-line strings possible
-                                    line = next_line;
-                                    line_string = next_line_string;
-                                    graphemes =
-                                        next_line_string.graphemes(true).enumerate().peekable();
-                                } else {
-                                    scan_errors
-                                        .push(ScanError::UnterminatedString { line, col: start });
-                                    break;
-                                }
+                                scan_errors.push(ScanError::UnterminatedString {
+                                    line: line_string.into(),
+                                    line_index: line,
+                                    col_index: start,
+                                });
+                                break;
                             }
                         }
                         tokens.push(Token::String(string_literal));
@@ -172,10 +176,10 @@ impl Scanner {
     }
 
     fn is_digit(char: &str) -> bool {
-        match char {
-            "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" => true,
-            _ => false,
-        }
+        matches!(
+            char,
+            "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+        )
     }
 
     fn is_alpha(char: &str) -> bool {

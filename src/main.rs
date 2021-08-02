@@ -1,7 +1,6 @@
 use scanner::Scanner;
 use std::error::Error;
 use std::io::{self, prelude::*};
-use thiserror;
 
 mod scanner;
 mod token;
@@ -39,11 +38,11 @@ fn run_file(input_path: String) -> Result<(), Box<dyn Error>> {
 
 fn run_prompt() -> Result<(), Box<dyn Error>> {
     let stdin = io::stdin();
-    let mut lines = stdin.lock().lines();
+    let lines = stdin.lock().lines();
     println!("loxide");
     print!("> ");
     io::stdout().flush().unwrap();
-    while let Some(line) = lines.next() {
+    for line in lines {
         let buffer = line?;
         if let Err(error) = run(buffer) {
             println!("Error: {}", error);
@@ -51,7 +50,7 @@ fn run_prompt() -> Result<(), Box<dyn Error>> {
         print!("> ");
         io::stdout().flush().unwrap();
     }
-    println!("");
+    println!();
     Ok(())
 }
 
@@ -61,8 +60,9 @@ fn run(source: String) -> Result<(), Box<dyn Error>> {
     match scanner.tokens() {
         Ok(tokens) => {
             for token in tokens.iter() {
-                dbg!(&token);
+                print!("{:?} ", token);
             }
+            println!();
         }
         Err(scan_errors) => {
             for error in scan_errors.iter() {
