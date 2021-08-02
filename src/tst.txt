@@ -1,0 +1,3 @@
+// Comment
+var hello = 1.0;
+var bob = "blah"
