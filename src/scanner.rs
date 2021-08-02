@@ -3,16 +3,16 @@ use unicode_segmentation::UnicodeSegmentation;
 
 #[derive(thiserror::Error, Debug)]
 pub enum ScanError {
-    #[error("Error: Unexpected character '{}' at line {} col {}\n{} | {}\n", char, line_index + 1, col_index + 1, line_index + 1,line)]
+    #[error("Error: Unexpected character '{}' at line {} col {}\n{} | {}\n", char, line_index + 1, col_index + 1, line_index + 1,line_str)]
     UnexpectedChar {
         char: String,
-        line: String,
+        line_str: String,
         line_index: usize,
         col_index: usize,
     },
-    #[error("Unterminated string at line {} col {}\n{} | {}\n", line_index + 1, col_index + 1, line_index + 1,line)]
+    #[error("Unterminated string at line {} col {}\n{} | {}\n", line_index + 1, col_index + 1, line_index + 1,line_str)]
     UnterminatedString {
-        line: String,
+        line_str: String,
         line_index: usize,
         col_index: usize,
     },
@@ -102,7 +102,7 @@ impl Scanner {
                                 graphemes = next_line_string.graphemes(true).enumerate().peekable();
                             } else {
                                 scan_errors.push(ScanError::UnterminatedString {
-                                    line: line_string.into(),
+                                    line_str: line_string.into(),
                                     line_index: line,
                                     col_index: start,
                                 });
@@ -112,9 +112,9 @@ impl Scanner {
                         tokens.push(Token::String(string_literal));
                     }
                     " " => (), // Ignore whitespace
-                    c => {
-                        if Scanner::is_digit(c) {
-                            let mut number_literal = String::from(c);
+                    other_char => {
+                        if Scanner::is_digit(other_char) {
+                            let mut number_literal = String::from(other_char);
                             'outer: while let Some((_, next_char)) = graphemes.peek() {
                                 if Scanner::is_digit(next_char) {
                                     number_literal = [number_literal, (*next_char).into()].concat();
@@ -137,8 +137,8 @@ impl Scanner {
                             }
                             let number: f64 = number_literal.parse().unwrap();
                             tokens.push(Token::Number(number));
-                        } else if Scanner::is_alpha(c) {
-                            let mut identifier = c;
+                        } else if Scanner::is_alpha(other_char) {
+                            let mut identifier = other_char;
                             #[allow(unused_assignments)]
                             let mut id_str = identifier.into();
                             while let Some((_, next_char)) = graphemes.peek() {
@@ -157,8 +157,8 @@ impl Scanner {
                             }
                         } else {
                             scan_errors.push(ScanError::UnexpectedChar {
-                                char: c.into(),
-                                line: line_string.into(),
+                                char: other_char.into(),
+                                line_str: line_string.into(),
                                 line_index: line,
                                 col_index: start,
                             });
@@ -176,10 +176,11 @@ impl Scanner {
     }
 
     fn is_digit(char: &str) -> bool {
-        matches!(
-            char,
-            "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
-        )
+        if let Some(c) = char.chars().next() {
+            c.is_numeric()
+        } else {
+            false
+        }
     }
 
     fn is_alpha(char: &str) -> bool {
