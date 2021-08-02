@@ -11,7 +11,6 @@ fn main() {
     let result = {
         args.next();
         if args.len() > 1 {
-            dbg!(args);
             Err(UsageError::TooManyArgs.into())
         } else if let Some(arg) = args.next() {
             run_file(arg)
