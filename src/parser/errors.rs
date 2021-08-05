@@ -4,6 +4,6 @@ pub enum ParseError {
     PopFailed,
     #[error("Error: Missing right parenthesis")]
     MissingRightParen,
-    #[error("Error: unexpected token found")]
-    UnexpectedToken,
+    #[error("Error: expected expression")]
+    ExpectedExpression,
 }

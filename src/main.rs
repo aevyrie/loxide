@@ -57,8 +57,7 @@ fn run(source: String) -> Result<(), Box<dyn Error>> {
                 print!("{}", token);
             }
             println!();
-            let ast = parser::parse(&mut tokens)?;
-            println!("{}", ast);
+            parser::parse(&mut tokens);
         }
         Err(scan_errors) => {
             for error in scan_errors.iter() {
