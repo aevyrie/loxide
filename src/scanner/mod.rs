@@ -1,22 +1,11 @@
-use crate::token::{self, Token};
-use unicode_segmentation::UnicodeSegmentation;
+pub mod errors;
+pub mod token;
 
-#[derive(thiserror::Error, Debug)]
-pub enum ScanError {
-    #[error("Error: Unexpected character '{}' at line {} col {}\n{} | {}\n", char, line_index + 1, col_index + 1, line_index + 1,line_str)]
-    UnexpectedChar {
-        char: String,
-        line_str: String,
-        line_index: usize,
-        col_index: usize,
-    },
-    #[error("Unterminated string at line {} col {}\n{} | {}\n", line_index + 1, col_index + 1, line_index + 1,line_str)]
-    UnterminatedString {
-        line_str: String,
-        line_index: usize,
-        col_index: usize,
-    },
-}
+use self::{
+    errors::ScanError,
+    token::{Token, KEYWORDS},
+};
+use unicode_segmentation::UnicodeSegmentation;
 
 pub struct Scanner {
     //source: String,
@@ -135,8 +124,18 @@ impl Scanner {
                                     break;
                                 }
                             }
-                            let number: f64 = number_literal.parse().unwrap();
-                            tokens.push(Token::Number(number));
+                            match number_literal.parse() {
+                                Ok(num) => {
+                                    let number: f64 = num;
+                                    tokens.push(Token::Number(number));
+                                }
+                                Err(_) => scan_errors.push(ScanError::NumberLiteralParse {
+                                    number: number_literal,
+                                    line_str: line_string.into(),
+                                    line_index: line,
+                                    col_index: start,
+                                }),
+                            }
                         } else if Scanner::is_alpha(other_char) {
                             let mut identifier = other_char;
                             #[allow(unused_assignments)]
@@ -150,7 +149,7 @@ impl Scanner {
                                     break;
                                 }
                             }
-                            if let Some(keyword) = token::KEYWORDS.get(identifier) {
+                            if let Some(keyword) = KEYWORDS.get(identifier) {
                                 tokens.push(keyword.clone());
                             } else {
                                 tokens.push(Token::Identifier(String::from(identifier)));

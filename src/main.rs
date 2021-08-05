@@ -1,26 +1,22 @@
-use scanner::Scanner;
 use std::error::Error;
 use std::io::{self, prelude::*};
+use std::path::Path;
 
 mod scanner;
-mod token;
 
 fn main() {
     let mut args = std::env::args();
-    let result = {
-        args.next();
-        if args.len() > 1 {
+    match {
+        if args.len() > 2 {
             Err(UsageError::TooManyArgs.into())
-        } else if let Some(arg) = args.next() {
-            run_file(arg)
+        } else if let Some(arg) = args.nth(1) {
+            run_file(Path::new(&arg))
         } else {
             run_prompt()
         }
-    };
-    if let Err(error) = result {
-        println!("{}", error);
-    } else {
-        println!("Goodbye!");
+    } {
+        Ok(_) => println!("Goodbye!"),
+        Err(error) => println!("{}", error),
     }
 }
 
@@ -30,8 +26,7 @@ pub enum UsageError {
     TooManyArgs,
 }
 
-fn run_file(input_path: String) -> Result<(), Box<dyn Error>> {
-    let path = std::path::Path::new(&input_path);
+fn run_file(path: &Path) -> Result<(), Box<dyn Error>> {
     let source = std::fs::read_to_string(path)?;
     run(source)
 }
@@ -41,21 +36,21 @@ fn run_prompt() -> Result<(), Box<dyn Error>> {
     let lines = stdin.lock().lines();
     println!("loxide");
     print!("> ");
-    io::stdout().flush().unwrap();
+    io::stdout().flush()?;
     for line in lines {
         let buffer = line?;
         if let Err(error) = run(buffer) {
             println!("Error: {}", error);
         }
         print!("> ");
-        io::stdout().flush().unwrap();
+        io::stdout().flush()?;
     }
     println!();
     Ok(())
 }
 
 fn run(source: String) -> Result<(), Box<dyn Error>> {
-    let scanner = Scanner::new(source);
+    let scanner = scanner::Scanner::new(source);
 
     match scanner.tokens() {
         Ok(tokens) => {
