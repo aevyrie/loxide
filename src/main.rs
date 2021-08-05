@@ -2,6 +2,7 @@ use std::error::Error;
 use std::io::{self, prelude::*};
 use std::path::Path;
 
+mod parser;
 mod scanner;
 
 fn main() {
@@ -50,14 +51,14 @@ fn run_prompt() -> Result<(), Box<dyn Error>> {
 }
 
 fn run(source: String) -> Result<(), Box<dyn Error>> {
-    let scanner = scanner::Scanner::new(source);
-
-    match scanner.tokens() {
-        Ok(tokens) => {
+    match scanner::scan(&source) {
+        Ok(mut tokens) => {
             for token in tokens.iter() {
-                print!("{:?} ", token);
+                print!("{}", token);
             }
             println!();
+            let ast = parser::parse(&mut tokens)?;
+            println!("{}", ast);
         }
         Err(scan_errors) => {
             for error in scan_errors.iter() {
