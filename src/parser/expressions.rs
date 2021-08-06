@@ -1,6 +1,5 @@
-use std::fmt::{self, Debug, Display, Formatter};
-
 use crate::scanner::tokens::Token;
+use std::fmt::{self, Debug, Display, Formatter};
 
 #[derive(Debug, Clone)]
 pub enum Expression {

@@ -4,7 +4,7 @@ use crate::scanner::tokens::Token::{self, *};
 pub mod errors;
 pub mod expressions;
 
-pub fn parse(tokens: &mut Vec<Token>) {
+pub fn parse(tokens: &mut Vec<Token>) -> Result<Expression, ParseError> {
     tokens.reverse(); // Reverse so we can pop() off the "front" of the vec
     let mut errors = Vec::new();
     let mut expression_list = Vec::new();
@@ -12,15 +12,24 @@ pub fn parse(tokens: &mut Vec<Token>) {
         synchronize(tokens);
         expr
     }));
-    for error in errors {
+    for error in errors.iter() {
         println!("{}", error);
     }
-    for expr in expression_list {
+    for expr in &expression_list {
         match expr {
             Ok(x) => println!("Parse Succeeded: {}", x),
             Err(Some(x)) => println!("Parse Error: {}", x),
             _ => (),
         }
+    }
+    if errors.is_empty() && expression_list.len() == 1 {
+        if let Some(Ok(expr)) = expression_list.pop() {
+            Ok(expr)
+        } else {
+            panic!("Expression list unexpectedly empty")
+        }
+    } else {
+        panic!("Failed to parse")
     }
 }
 

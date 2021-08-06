@@ -1,7 +1,9 @@
+use interpreter::Interpretation;
 use std::error::Error;
 use std::io::{self, prelude::*};
 use std::path::Path;
 
+mod interpreter;
 mod parser;
 mod scanner;
 
@@ -57,7 +59,13 @@ fn run(source: String) -> Result<(), Box<dyn Error>> {
                 print!("{}", token);
             }
             println!();
-            parser::parse(&mut tokens);
+            match parser::parse(&mut tokens) {
+                Ok(expr) => {
+                    let val: String = expr.interpret();
+                    dbg!(val);
+                }
+                Err(e) => panic!("failed to parse"),
+            }
         }
         Err(scan_errors) => {
             for error in scan_errors.iter() {
